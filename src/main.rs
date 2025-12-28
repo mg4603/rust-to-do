@@ -7,6 +7,11 @@ struct Task {
     done: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct TaskList {
+    tasks: Vec<Task>,
+}
+
 fn main() {
     println!("Hello, world!");
 }
