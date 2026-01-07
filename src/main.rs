@@ -44,6 +44,20 @@ fn add_task(text: &str) {
     println!("Added task #{id}: {text}");
 }
 
+fn list_tasks () {
+    let list = load_tasks();
+
+    if list.tasks.is_empty() {
+        println!("No tasks yet.");
+        return;
+    }
+
+    for task in list.tasks {
+        let status = if task.done { "[x]" } else { "[ ]" };
+        println!("{} {} {}", status, task.id, task.text);
+    }
+}
+
 fn main() {
     println!("Hello, world!");
 }
