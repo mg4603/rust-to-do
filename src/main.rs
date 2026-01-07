@@ -58,6 +58,18 @@ fn list_tasks () {
     }
 }
 
+fn complete_task(id: u32) {
+    let mut list = load_tasks();
+
+    if let Some(task) = list.tasks.iter_mut().find(|t| t.id == id) {
+        task.done = true;
+        save_tasks(&list);
+        println!("Completed task #{id}");
+    } else {
+        println!("Task #{id} not found");
+    }
+}
+
 fn main() {
     println!("Hello, world!");
 }
