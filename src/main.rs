@@ -30,6 +30,20 @@ fn save_tasks(list: &TaskList) {
     fs::write(FILE, data).expect("Failed to write file");
 }
 
+fn add_task(text: &str) {
+    let mut list = load_tasks();
+    let id = (list.tasks.len() as u32) + 1;
+
+    list.tasks.push(Task {
+        id,
+        text: text.to_string(),
+        done: false,
+    });
+
+    save_tasks(&list);
+    println!("Added task #{id}: {text}");
+}
+
 fn main() {
     println!("Hello, world!");
 }
