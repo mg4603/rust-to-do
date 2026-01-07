@@ -70,6 +70,21 @@ fn complete_task(id: u32) {
     }
 }
 
+fn delete_task(id: u32) {
+    let mut list = load_tasks();
+    let before = list.tasks.len();
+
+    list.tasks.retain(|t| t.id != id);
+
+    if list.tasks.len() == before {
+        println!("Task #{id} not found");
+        return;
+    } 
+
+    save_tasks(&list);
+    println!("Deleted task #{id}");
+}
+
 fn main() {
     println!("Hello, world!");
 }
