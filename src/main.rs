@@ -25,6 +25,11 @@ fn load_tasks() -> TaskList {
     serde_json::from_str(&data).unwrap_or(TaskList { tasks: Vec::new() })
 }
 
+fn save_tasks(list: &TaskList) {
+    let data = serde_json::to_string_pretty(list).expect("Failed to serialize");
+    fs::write(FILE, data).expect("Failed to write file");
+}
+
 fn main() {
     println!("Hello, world!");
 }
