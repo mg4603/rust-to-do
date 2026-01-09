@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::Path;
 
@@ -12,6 +13,32 @@ struct Task {
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskList {
     tasks: Vec<Task>,
+}
+
+#[derive(Parser)]
+#[command(name = "todo")]
+#[command(about = "A simple command-line todo app", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    #[command(about = "Add a new task\n\ttodo add \"task\"")]
+    Add {
+        text: String,
+    },
+    #[command(about = "List all tasks")]
+    List,
+    #[command(about = "Mark a task as completed\n\ttodo done <ID>")]
+    Done {
+        id: u32,
+    },
+    #[command(about = "Delete a task\n\ttodo delete <ID>")]
+    Delete {
+        id: u32,
+    },
 }
 
 const FILE: &str = "tasks.json";
@@ -86,47 +113,13 @@ fn delete_task(id: u32) {
 }
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    let cli = Cli::parse();
 
-    if args.len() < 2 {
-        print_help();
-        return;
-    }
-
-    match args[1].as_str() {
-        "add" => {
-            if args.len() < 3 {
-                println!("Usage: todo add \"task description\"");
-            } else {
-                add_task(&args[2]);
-            }
-        }
-        "list" => list_tasks(),
-        "done" => {
-           if args.len() < 3 {
-               println!("Usage: todo done <id>");
-           } else {
-               let id = args[2].parse().unwrap();
-               complete_task(id);
-           }
-        }
-        "delete" => {
-            if args.len() < 3 {
-                println!("Usage: todo delete <id>");
-            } else {
-                let id = args[2].parse().unwrap();
-                delete_task(id);
-            }
-        }
-
-        _ => print_help(),
+    match cli.command {
+        Commands::Add { text } => add_task(&text),
+        Commands::List => list_tasks(),
+        Commands::Done { id } => complete_task(id),
+        Commands::Delete { id } => delete_task(id),
     }
 }
 
-fn print_help() {
-    println!("Usage:");
-    println!("  todo add \"task\"");
-    println!("  todo list");
-    println!("  todo done <id>");
-    println!("  todo delete <id>");
-}
