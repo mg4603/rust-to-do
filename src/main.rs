@@ -86,5 +86,40 @@ fn delete_task(id: u32) {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() < 2 {
+        print_help();
+        return;
+    }
+
+    match args[1].as_str() {
+        "add" => {
+            if args.len() < 3 {
+                println!("Usage: todo add \"task description\"");
+            } else {
+                add_task(&args[2]);
+            }
+        }
+        "list" => list_tasks(),
+        "done" => {
+           if args.len() < 3 {
+               println!("Usage: todo done <id>");
+           } else {
+               let id = args[2].parse().unwrap();
+               complete_task(id);
+           }
+        }
+        "delete" => {
+            if args.len() < 3 {
+                println!("Usage: todo delete <id>");
+            } else {
+                let id = args[2].parse().unwrap();
+                delete_task(id);
+            }
+        }
+
+        _ => print_help(),
+    }
 }
+
