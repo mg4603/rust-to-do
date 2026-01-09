@@ -123,3 +123,10 @@ fn main() {
     }
 }
 
+fn print_help() {
+    println!("Usage:");
+    println!("  todo add \"task\"");
+    println!("  todo list");
+    println!("  todo done <id>");
+    println!("  todo delete <id>");
+}
