@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::Path;
+use chrono::NaiveDate;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Task {
     id: u32,
     text: String,
     done: bool,
+    due: Option<NaiveDate>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -26,20 +28,24 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    #[command(about = "Add a new task\n\ttodo add \"task\"")]
     Add {
         text: String,
+
+        #[arg(long, value_parser = parse_date)]
+        due: Option<NaiveDate>,
     },
-    #[command(about = "List all tasks")]
     List,
-    #[command(about = "Mark a task as completed\n\ttodo done <ID>")]
     Done {
         id: u32,
     },
-    #[command(about = "Delete a task\n\ttodo delete <ID>")]
     Delete {
         id: u32,
     },
+}
+
+fn parse_date(s: &str) -> Result<NaiveDate, String> {
+    NaiveDate::parse_from_str(s, "%Y-%m-%d")
+        .map_err(|_| "Date must be in YYYY-MM-DD format".to_string())
 }
 
 const FILE: &str = "tasks.json";
@@ -64,7 +70,7 @@ fn save_tasks(list: &TaskList) {
     fs::write(FILE, data).expect("Failed to write file");
 }
 
-fn add_task(text: &str) {
+fn add_task(text: &str, due: Option<NaiveDate>) {
     let mut list = load_tasks();
     let id = list.next_id;
     list.next_id += 1;
@@ -73,6 +79,7 @@ fn add_task(text: &str) {
         id,
         text: text.to_string(),
         done: false,
+        due,
     });
 
     save_tasks(&list);
@@ -89,7 +96,13 @@ fn list_tasks () {
 
     for task in list.tasks {
         let status = if task.done { "[x]" } else { "[ ]" };
-        println!("{} {} {}", status, task.id, task.text);
+
+        let due = match task.due {
+            Some(d) => format!(" (due {})", d),
+            None => String::new(),
+        };
+
+        println!("{} {} {}{}", status, task.id, task.text, due);
     }
 }
 
@@ -124,7 +137,7 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Add { text } => add_task(&text),
+        Commands::Add { text, due } => add_task(&text, due),
         Commands::List => list_tasks(),
         Commands::Done { id } => complete_task(id),
         Commands::Delete { id } => delete_task(id),
