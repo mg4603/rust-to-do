@@ -3,6 +3,25 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::Path;
 use chrono::NaiveDate;
+use clap::ValueEnum;
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    ValueEnum,
+)]
+enum Priority {
+    Low,
+    Medium,
+    High,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Task {
@@ -10,6 +29,8 @@ struct Task {
     text: String,
     done: bool,
     due: Option<NaiveDate>,
+    #[serde(default = "default_priority")]
+    priority: Priority,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -33,6 +54,9 @@ enum Commands {
 
         #[arg(long, value_parser = parse_date)]
         due: Option<NaiveDate>,
+
+        #[arg(long, value_enum, default_value = "medium")]
+        priority: Priority,
     },
     List,
     Done {
@@ -41,6 +65,10 @@ enum Commands {
     Delete {
         id: u32,
     },
+}
+
+fn default_priority() -> Priority {
+    Priority::Medium
 }
 
 fn parse_date(s: &str) -> Result<NaiveDate, String> {
@@ -70,7 +98,7 @@ fn save_tasks(list: &TaskList) {
     fs::write(FILE, data).expect("Failed to write file");
 }
 
-fn add_task(text: &str, due: Option<NaiveDate>) {
+fn add_task(text: &str, due: Option<NaiveDate>, priority: Priority) {
     let mut list = load_tasks();
     let id = list.next_id;
     list.next_id += 1;
@@ -80,6 +108,7 @@ fn add_task(text: &str, due: Option<NaiveDate>) {
         text: text.to_string(),
         done: false,
         due,
+        priority,
     });
 
     save_tasks(&list);
@@ -87,12 +116,19 @@ fn add_task(text: &str, due: Option<NaiveDate>) {
 }
 
 fn list_tasks () {
-    let list = load_tasks();
+    let mut list = load_tasks();
 
     if list.tasks.is_empty() {
         println!("No tasks yet.");
         return;
     }
+
+    // Sort: unfinished first, then priority, then due date
+    list.tasks.sort_by_key(|t| (
+        t.done,
+        std::cmp::Reverse(t.priority),
+        t.due,
+    ));
 
     for task in list.tasks {
         let status = if task.done { "[x]" } else { "[ ]" };
@@ -102,7 +138,14 @@ fn list_tasks () {
             None => String::new(),
         };
 
-        println!("{} {} {}{}", status, task.id, task.text, due);
+        println!(
+            "{} {} [{}] {}{}", 
+            status, 
+            task.id, 
+            format!("{:?}", task.priority).to_lowercase(),
+            task.text, 
+            due
+        );
     }
 }
 
@@ -137,7 +180,7 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Add { text, due } => add_task(&text, due),
+        Commands::Add { text, due, priority } => add_task(&text, due, priority),
         Commands::List => list_tasks(),
         Commands::Done { id } => complete_task(id),
         Commands::Delete { id } => delete_task(id),
