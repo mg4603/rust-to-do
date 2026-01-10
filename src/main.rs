@@ -12,6 +12,7 @@ struct Task {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskList {
+    next_id: u32,
     tasks: Vec<Task>,
 }
 
@@ -45,11 +46,17 @@ const FILE: &str = "tasks.json";
 
 fn load_tasks() -> TaskList {
     if !Path::new(FILE).exists() {
-        return TaskList { tasks: Vec::new() };
+        return TaskList { 
+            next_id: 1,
+            tasks: Vec::new(),
+        };
     }
 
     let data = fs::read_to_string(FILE).expect("Failed to read file");
-    serde_json::from_str(&data).unwrap_or(TaskList { tasks: Vec::new() })
+    serde_json::from_str(&data).unwrap_or(TaskList { 
+        next_id: 1,
+        tasks: Vec::new(),
+    })
 }
 
 fn save_tasks(list: &TaskList) {
@@ -59,7 +66,8 @@ fn save_tasks(list: &TaskList) {
 
 fn add_task(text: &str) {
     let mut list = load_tasks();
-    let id = (list.tasks.len() as u32) + 1;
+    let id = list.next_id;
+    list.next_id += 1;
 
     list.tasks.push(Task {
         id,
