@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use chrono::NaiveDate;
 use clap::ValueEnum;
+use colored::*;
 
 #[derive(
     Serialize,
@@ -65,6 +66,22 @@ enum Commands {
     Delete {
         id: u32,
     },
+}
+
+fn color_priority(p: Priority, text: &str) -> ColoredString {
+    match p {
+        Priority::High => text.red(),
+        Priority::Medium => text.yellow(),
+        Priority::Low => text.blue(),
+    }
+}
+
+fn color_status(done: bool, text: &str) -> ColoredString {
+    if done {
+        text.dimmed()
+    } else {
+        text.normal()
+    }
 }
 
 fn default_priority() -> Priority {
@@ -137,14 +154,19 @@ fn list_tasks () {
             Some(d) => format!(" (due {})", d),
             None => String::new(),
         };
+        
+        let priority = format!("{:?}", task.priority).to_lowercase();
+        let priority_colored = color_priority(task.priority, &priority);
+
+        let text = format!("{}{}", task.text, due);
+        let text_colored = color_status(task.done, &text);
 
         println!(
-            "{} {} [{}] {}{}", 
+            "{} {} [{}] {}", 
             status, 
             task.id, 
-            format!("{:?}", task.priority).to_lowercase(),
-            task.text, 
-            due
+            priority_colored,
+            text_colored
         );
     }
 }
