@@ -1,23 +1,12 @@
-use serde::{Deserialize, Serialize};
-use clap::{Parser, Subcommand};
-use std::fs;
-use std::path::Path;
 use chrono::NaiveDate;
 use clap::ValueEnum;
+use clap::{Parser, Subcommand};
 use colored::*;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    ValueEnum,
-)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Priority {
     Low,
     Medium,
@@ -68,6 +57,44 @@ enum Commands {
     },
 }
 
+impl TaskList {
+    fn new() -> Self {
+        TaskList {
+            next_id: 1,
+            tasks: Vec::new(),
+        }
+    }
+
+    fn add(&mut self, text: String, due: Option<NaiveDate>, priority: Priority) -> u32 {
+        let id = self.next_id;
+        self.next_id += 1;
+
+        self.tasks.push(Task {
+            id,
+            text,
+            done: false,
+            due,
+            priority,
+        });
+        id
+    }
+
+    fn complete(&mut self, id: u32) -> bool {
+        if let Some(task) = self.tasks.iter_mut().find(|t| t.id == id) {
+            task.done = true;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn delete(&mut self, id: u32) -> bool {
+        let before = self.tasks.len();
+        self.tasks.retain(|t| t.id != id);
+        before != self.tasks.len()
+    }
+}
+
 fn color_priority(p: Priority, text: &str) -> ColoredString {
     match p {
         Priority::High => text.red(),
@@ -77,11 +104,7 @@ fn color_priority(p: Priority, text: &str) -> ColoredString {
 }
 
 fn color_status(done: bool, text: &str) -> ColoredString {
-    if done {
-        text.dimmed()
-    } else {
-        text.normal()
-    }
+    if done { text.dimmed() } else { text.normal() }
 }
 
 fn default_priority() -> Priority {
@@ -97,14 +120,14 @@ const FILE: &str = "tasks.json";
 
 fn load_tasks() -> TaskList {
     if !Path::new(FILE).exists() {
-        return TaskList { 
+        return TaskList {
             next_id: 1,
             tasks: Vec::new(),
         };
     }
 
     let data = fs::read_to_string(FILE).expect("Failed to read file");
-    serde_json::from_str(&data).unwrap_or(TaskList { 
+    serde_json::from_str(&data).unwrap_or(TaskList {
         next_id: 1,
         tasks: Vec::new(),
     })
@@ -132,7 +155,7 @@ fn add_task(text: &str, due: Option<NaiveDate>, priority: Priority) {
     println!("Added task #{id}: {text}");
 }
 
-fn list_tasks () {
+fn list_tasks() {
     let mut list = load_tasks();
 
     if list.tasks.is_empty() {
@@ -141,11 +164,8 @@ fn list_tasks () {
     }
 
     // Sort: unfinished first, then priority, then due date
-    list.tasks.sort_by_key(|t| (
-        t.done,
-        std::cmp::Reverse(t.priority),
-        t.due,
-    ));
+    list.tasks
+        .sort_by_key(|t| (t.done, std::cmp::Reverse(t.priority), t.due));
 
     for task in list.tasks {
         let status = if task.done { "[x]" } else { "[ ]" };
@@ -154,7 +174,7 @@ fn list_tasks () {
             Some(d) => format!(" (due {})", d),
             None => String::new(),
         };
-        
+
         let priority = format!("{:?}", task.priority).to_lowercase();
         let priority_colored = color_priority(task.priority, &priority);
 
@@ -162,15 +182,13 @@ fn list_tasks () {
         let text_colored = color_status(task.done, &text);
 
         println!(
-            "{} {} [{}] {}", 
-            status, 
-            task.id, 
-            priority_colored,
-            text_colored
+            "{} {} [{}] {}",
+            status, task.id, priority_colored, text_colored
         );
     }
 }
 
+// make toggle?
 fn complete_task(id: u32) {
     let mut list = load_tasks();
 
@@ -192,7 +210,7 @@ fn delete_task(id: u32) {
     if list.tasks.len() == before {
         println!("Task #{id} not found");
         return;
-    } 
+    }
 
     save_tasks(&list);
     println!("Deleted task #{id}");
@@ -202,10 +220,13 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Add { text, due, priority } => add_task(&text, due, priority),
+        Commands::Add {
+            text,
+            due,
+            priority,
+        } => add_task(&text, due, priority),
         Commands::List => list_tasks(),
         Commands::Done { id } => complete_task(id),
         Commands::Delete { id } => delete_task(id),
     }
 }
-
