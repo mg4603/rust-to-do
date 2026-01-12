@@ -120,17 +120,11 @@ const FILE: &str = "tasks.json";
 
 fn load_tasks() -> TaskList {
     if !Path::new(FILE).exists() {
-        return TaskList {
-            next_id: 1,
-            tasks: Vec::new(),
-        };
+        TaskList::new();
     }
 
     let data = fs::read_to_string(FILE).expect("Failed to read file");
-    serde_json::from_str(&data).unwrap_or(TaskList {
-        next_id: 1,
-        tasks: Vec::new(),
-    })
+    serde_json::from_str(&data).unwrap_or_else(|_| TaskList::new())
 }
 
 fn save_tasks(list: &TaskList) {
