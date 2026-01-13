@@ -2,8 +2,6 @@ mod cli;
 mod model;
 mod storage;
 
-use crate::model::TaskList;
-use chrono::NaiveDate;
 use clap::Parser;
 use cli::*;
 use colored::*;
@@ -20,23 +18,6 @@ fn color_priority(p: Priority, text: &str) -> ColoredString {
 
 fn color_status(done: bool, text: &str) -> ColoredString {
     if done { text.dimmed() } else { text.normal() }
-}
-
-fn add_task(text: &str, due: Option<NaiveDate>, priority: Priority) {
-    let mut list = load_tasks();
-    let id = list.next_id;
-    list.next_id += 1;
-
-    list.tasks.push(Task {
-        id,
-        text: text.to_string(),
-        done: false,
-        due,
-        priority,
-    });
-
-    save_tasks(&list);
-    println!("Added task #{id}: {text}");
 }
 
 fn list_tasks() {
@@ -70,34 +51,6 @@ fn list_tasks() {
             status, task.id, priority_colored, text_colored
         );
     }
-}
-
-// make toggle?
-fn complete_task(id: u32) {
-    let mut list = load_tasks();
-
-    if let Some(task) = list.tasks.iter_mut().find(|t| t.id == id) {
-        task.done = true;
-        save_tasks(&list);
-        println!("Completed task #{id}");
-    } else {
-        println!("Task #{id} not found");
-    }
-}
-
-fn delete_task(id: u32) {
-    let mut list = load_tasks();
-    let before = list.tasks.len();
-
-    list.tasks.retain(|t| t.id != id);
-
-    if list.tasks.len() == before {
-        println!("Task #{id} not found");
-        return;
-    }
-
-    save_tasks(&list);
-    println!("Deleted task #{id}");
 }
 
 fn main() {
