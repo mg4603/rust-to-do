@@ -108,10 +108,34 @@ fn main() {
             text,
             due,
             priority,
-        } => add_task(&text, due, priority),
+        } => {
+            let mut list = load_tasks();
+            let id = list.add(text, due, priority);
+            save_tasks(&list);
+            println!("Added task #{id}");
+        }
+
         Commands::List => list_tasks(),
-        Commands::Done { id } => complete_task(id),
-        Commands::Delete { id } => delete_task(id),
+
+        Commands::Done { id } => {
+            let mut list = load_tasks();
+            if list.complete(id) {
+                save_tasks(&list);
+                println!("Completed task #{id}");
+            } else {
+                println!("Task #{id} not found");
+            }
+        }
+
+        Commands::Delete { id } => {
+            let mut list = load_tasks();
+            if list.delete(id) {
+                save_tasks(&list);
+                println!("Deleted task #{id}");
+            } else {
+                println!("Task #{id} not found");
+            }
+        }
     }
 }
 
