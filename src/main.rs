@@ -1,12 +1,12 @@
 mod model;
+mod storage;
 
 use crate::model::TaskList;
 use chrono::NaiveDate;
 use clap::{Parser, Subcommand};
 use colored::*;
 use model::*;
-use std::fs;
-use std::path::Path;
+use storage::*;
 
 #[derive(Parser)]
 #[command(name = "todo")]
@@ -51,22 +51,6 @@ fn color_status(done: bool, text: &str) -> ColoredString {
 fn parse_date(s: &str) -> Result<NaiveDate, String> {
     NaiveDate::parse_from_str(s, "%Y-%m-%d")
         .map_err(|_| "Date must be in YYYY-MM-DD format".to_string())
-}
-
-const FILE: &str = "tasks.json";
-
-fn load_tasks() -> TaskList {
-    if !Path::new(FILE).exists() {
-        TaskList::new();
-    }
-
-    let data = fs::read_to_string(FILE).expect("Failed to read file");
-    serde_json::from_str(&data).unwrap_or_else(|_| TaskList::new())
-}
-
-fn save_tasks(list: &TaskList) {
-    let data = serde_json::to_string_pretty(list).expect("Failed to serialize");
-    fs::write(FILE, data).expect("Failed to write file");
 }
 
 fn add_task(text: &str, due: Option<NaiveDate>, priority: Priority) {
