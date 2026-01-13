@@ -1,40 +1,14 @@
+mod cli;
 mod model;
 mod storage;
 
 use crate::model::TaskList;
 use chrono::NaiveDate;
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use cli::*;
 use colored::*;
 use model::*;
 use storage::*;
-
-#[derive(Parser)]
-#[command(name = "todo")]
-#[command(about = "A simple command-line todo app", long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Add {
-        text: String,
-
-        #[arg(long, value_parser = parse_date)]
-        due: Option<NaiveDate>,
-
-        #[arg(long, value_enum, default_value = "medium")]
-        priority: Priority,
-    },
-    List,
-    Done {
-        id: u32,
-    },
-    Delete {
-        id: u32,
-    },
-}
 
 fn color_priority(p: Priority, text: &str) -> ColoredString {
     match p {
@@ -46,11 +20,6 @@ fn color_priority(p: Priority, text: &str) -> ColoredString {
 
 fn color_status(done: bool, text: &str) -> ColoredString {
     if done { text.dimmed() } else { text.normal() }
-}
-
-fn parse_date(s: &str) -> Result<NaiveDate, String> {
-    NaiveDate::parse_from_str(s, "%Y-%m-%d")
-        .map_err(|_| "Date must be in YYYY-MM-DD format".to_string())
 }
 
 fn add_task(text: &str, due: Option<NaiveDate>, priority: Priority) {
