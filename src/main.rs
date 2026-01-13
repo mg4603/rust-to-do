@@ -1,33 +1,12 @@
+mod model;
+
+use crate::model::TaskList;
 use chrono::NaiveDate;
-use clap::ValueEnum;
 use clap::{Parser, Subcommand};
 use colored::*;
-use serde::{Deserialize, Serialize};
+use model::*;
 use std::fs;
 use std::path::Path;
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum Priority {
-    Low,
-    Medium,
-    High,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Task {
-    id: u32,
-    text: String,
-    done: bool,
-    due: Option<NaiveDate>,
-    #[serde(default = "default_priority")]
-    priority: Priority,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct TaskList {
-    next_id: u32,
-    tasks: Vec<Task>,
-}
 
 #[derive(Parser)]
 #[command(name = "todo")]
@@ -57,44 +36,6 @@ enum Commands {
     },
 }
 
-impl TaskList {
-    fn new() -> Self {
-        TaskList {
-            next_id: 1,
-            tasks: Vec::new(),
-        }
-    }
-
-    fn add(&mut self, text: String, due: Option<NaiveDate>, priority: Priority) -> u32 {
-        let id = self.next_id;
-        self.next_id += 1;
-
-        self.tasks.push(Task {
-            id,
-            text,
-            done: false,
-            due,
-            priority,
-        });
-        id
-    }
-
-    fn complete(&mut self, id: u32) -> bool {
-        if let Some(task) = self.tasks.iter_mut().find(|t| t.id == id) {
-            task.done = true;
-            true
-        } else {
-            false
-        }
-    }
-
-    fn delete(&mut self, id: u32) -> bool {
-        let before = self.tasks.len();
-        self.tasks.retain(|t| t.id != id);
-        before != self.tasks.len()
-    }
-}
-
 fn color_priority(p: Priority, text: &str) -> ColoredString {
     match p {
         Priority::High => text.red(),
@@ -105,10 +46,6 @@ fn color_priority(p: Priority, text: &str) -> ColoredString {
 
 fn color_status(done: bool, text: &str) -> ColoredString {
     if done { text.dimmed() } else { text.normal() }
-}
-
-fn default_priority() -> Priority {
-    Priority::Medium
 }
 
 fn parse_date(s: &str) -> Result<NaiveDate, String> {
