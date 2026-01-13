@@ -30,25 +30,28 @@ fn list_tasks() {
 
     // Sort: unfinished first, then priority, then due date
     list.tasks
-        .sort_by_key(|t| (t.done, std::cmp::Reverse(t.priority), t.due));
+        .sort_by_key(|t| (t.done(), std::cmp::Reverse(t.priority()), t.due()));
 
     for task in list.tasks {
-        let status = if task.done { "[x]" } else { "[ ]" };
+        let status = if task.done() { "[x]" } else { "[ ]" };
 
-        let due = match task.due {
+        let due = match task.due() {
             Some(d) => format!(" (due {})", d),
             None => String::new(),
         };
 
-        let priority = format!("{:?}", task.priority).to_lowercase();
-        let priority_colored = color_priority(task.priority, &priority);
+        let priority = format!("{:?}", task.priority()).to_lowercase();
+        let priority_colored = color_priority(task.priority(), &priority);
 
-        let text = format!("{}{}", task.text, due);
-        let text_colored = color_status(task.done, &text);
+        let text = format!("{}{}", task.text(), due);
+        let text_colored = color_status(task.done(), &text);
 
         println!(
             "{} {} [{}] {}",
-            status, task.id, priority_colored, text_colored
+            status,
+            task.id(),
+            priority_colored,
+            text_colored
         );
     }
 }

@@ -15,12 +15,34 @@ fn default_priority() -> Priority {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Task {
-    pub id: u32,
-    pub text: String,
-    pub done: bool,
-    pub due: Option<NaiveDate>,
+    id: u32,
+    text: String,
+    done: bool,
+    due: Option<NaiveDate>,
     #[serde(default = "default_priority")]
-    pub priority: Priority,
+    priority: Priority,
+}
+
+impl Task {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    pub fn done(&self) -> bool {
+        self.done
+    }
+
+    pub fn due(&self) -> Option<NaiveDate> {
+        self.due
+    }
+
+    pub fn priority(&self) -> Priority {
+        self.priority
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
