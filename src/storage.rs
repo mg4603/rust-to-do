@@ -1,17 +1,15 @@
 use std::fs;
-use std::path::Path;
 
 use crate::model::TaskList;
 
 const FILE: &str = "tasks.json";
 
 pub fn load_tasks() -> TaskList {
-    if !Path::new(FILE).exists() {
-        TaskList::new();
+    match fs::read_to_string(FILE) {
+        Ok(data) => serde_json::from_str(&data).unwrap_or_else(|_| TaskList::new()),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => TaskList::new(),
+        Err(err) => panic!("Failed to read tasks file: {err}"),
     }
-
-    let data = fs::read_to_string(FILE).expect("Failed to read file");
-    serde_json::from_str(&data).unwrap_or_else(|_| TaskList::new())
 }
 
 pub fn save_tasks(list: &TaskList) {
